@@ -70,9 +70,8 @@ export default function BinaryOperations() {
         borrow = 0;     
       }      
       
-      result = (bit1 - bit2) + result;    
-      let borrowPrint = borrow ? ` borrow ${borrow} ` : " "
-      steps.push(`Step ${maxLength - i}: ${binary1[i]} - ${binary2[i]} - ${borrow} = ${bit1 - bit2} -> result: ${result}`);   
+      result = (bit1 - bit2) + result;      
+      steps.push(`Step ${maxLength - i}: ${binary1[i]} - ${binary2[i]} - borrow(${borrow}) = ${bit1 - bit2} -> result: ${result}`);   
     }    
     
     return { result, steps }; 
