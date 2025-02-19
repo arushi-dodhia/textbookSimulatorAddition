@@ -10,40 +10,69 @@ export default function BinaryOperations() {
   const [steps, setSteps] = useState([]);
   const [result, setResult] = useState("");
 
+
   useEffect(() => {
     if (!operation) {
       navigate("/");
     }
   }, [operation, navigate]);
 
-  const add = (binary1, binary2) => {    
-    if (!/^[01]+$/.test(binary1) || !/^[01]+$/.test(binary2)) {     
-      return { result: "Invalid binary input", steps: [] };   
-    }    
-    const maxLength = Math.max(binary1.length, binary2.length);   
-    binary1 = binary1.padStart(maxLength, "0");   
-    binary2 = binary2.padStart(maxLength, "0");    
+
+  const validLength = (value) => {
+    if (value.length !== 0 && value.length !== 6 && value.length !== 8) {
+      return false;
+    }
+    return true;
+  };
+
+
+  const add = (binary1, binary2) => {
+    if ((!/^[01]+$/.test(binary1) || !/^[01]+$/.test(binary2))&& validLength) {
+      return { result: "Invalid binary input", steps: [] };
+    }
+  
+    const maxLength = Math.max(binary1.length, binary2.length);
+    const paddedBinary1 = binary1.padStart(maxLength, "0");
+    const paddedBinary2 = binary2.padStart(maxLength, "0");
+  
+    let result = "";
+    let steps = [];
+    let carries = Array(maxLength + 2).fill(" "); 
     
-    let carry = 0;   
-    let result = "";   
-    let steps = [];    
+    let initialSetup = `  ${paddedBinary1}\n+ ${paddedBinary2}\n${"-".repeat(maxLength + 2)}`;
+    steps.push(initialSetup);
     
-    for (let i = maxLength - 1; i >= 0; i--) {     
-      const bit1 = parseInt(binary1[i], 10);     
-      const bit2 = parseInt(binary2[i], 10);     
-      const sum = bit1 + bit2 + carry;          
+    let carry = 0;
+    for (let i = maxLength - 1; i >= 0; i--) {
+      const bit1 = parseInt(paddedBinary1[i], 10);
+      const bit2 = parseInt(paddedBinary2[i], 10);
+      const sum = bit1 + bit2 + carry;
+      
       result = (sum % 2) + result;
-      carry = Math.floor(sum / 2);     
-      steps.push(`Step ${maxLength - i}: ${binary1[i]} + ${binary2[i]} + carry(${carry}) = ${sum} -> result: ${result}`);   
-    }    
+      
+      carry = Math.floor(sum / 2);
+      
+      if (carry > 0) {
+        carries[i + 1] = "1"; 
+      }
+    }
     
-    if (carry > 0) {     
-      result = carry + result;     
-      steps.push(`Final carry: ${carry}, result: ${result}`);   
-    }    
+    if (carry > 0) {
+      result = carry + result;
+    }
     
-    return { result, steps }; 
-  }
+    const carriesLine = carries.join("");
+    if (carriesLine.trim().length > 0) {
+      let finalDisplay = `${carriesLine}\n  ${paddedBinary1}\n+ ${paddedBinary2}\n${"-".repeat(maxLength + 2)}\n  ${result}`;
+      steps.push(finalDisplay);
+    } else {
+      let finalDisplay = `  ${paddedBinary1}\n+ ${paddedBinary2}\n${"-".repeat(maxLength + 2)}\n  ${result}`;
+      steps.push(finalDisplay);
+    }
+    
+    return { result, steps };
+  };
+  
 
   const subtract = (binary1, binary2) => {    
     if (!/^[01]+$/.test(binary1) || !/^[01]+$/.test(binary2)) {     
@@ -224,7 +253,13 @@ export default function BinaryOperations() {
             <div className="result-steps">
               <h3>Calculation Steps:</h3>
               {steps.map((step, index) => (
-                <div key={index}>{step}</div>
+                <pre key={index} style={{ 
+                  fontFamily: 'monospace', 
+                  whiteSpace: 'pre-wrap',
+                  margin: '8px 0'
+                }}>
+                  {step}
+                </pre>
               ))}
             </div>
             <div className="result-output">
