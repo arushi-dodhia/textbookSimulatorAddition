@@ -9,6 +9,8 @@ export default function BinaryOperations() {
   const [binary2, setBinary2] = useState("");
   const [steps, setSteps] = useState([]);
   const [result, setResult] = useState("");
+  const [remainder, setRemainder] = useState(null);
+
 
 
   useEffect(() => {
@@ -27,101 +29,80 @@ export default function BinaryOperations() {
 
 
   const add = (binary1, binary2) => {
-    if ((!/^[01]+$/.test(binary1) || !/^[01]+$/.test(binary2))&& validLength) {
-      return { result: "Invalid binary input", steps: [] };
+    if ((!/^[01]+$/.test(binary1) || !/^[01]+$/.test(binary2))) {
+        return { result: "Invalid binary input", steps: [], remainder: null };
     }
-  
+
     const maxLength = Math.max(binary1.length, binary2.length);
     const paddedBinary1 = binary1.padStart(maxLength, "0");
     const paddedBinary2 = binary2.padStart(maxLength, "0");
-  
+
     let result = "";
     let steps = [];
-    let carries = Array(maxLength + 2).fill(" "); 
-    
+    let carries = Array(maxLength + 2).fill(" ");
+
     let initialSetup = `  ${paddedBinary1}\n+ ${paddedBinary2}\n${"-".repeat(maxLength + 2)}`;
-    steps.push(initialSetup);
-    
+    //steps.push(initialSetup);
+
     let carry = 0;
     for (let i = maxLength - 1; i >= 0; i--) {
-      const bit1 = parseInt(paddedBinary1[i], 10);
-      const bit2 = parseInt(paddedBinary2[i], 10);
-      const sum = bit1 + bit2 + carry;
-      
-      result = (sum % 2) + result;
-      
-      carry = Math.floor(sum / 2);
-      
-      if (carry > 0) {
-        carries[i + 1] = "1"; 
-      }
-    }
-    
-    if (carry > 0) {
-      result = carry + result;
-    }
-    
-    const carriesLine = carries.join("");
-    if (carriesLine.trim().length > 0) {
-      let finalDisplay = `${carriesLine}\n  ${paddedBinary1}\n+ ${paddedBinary2}\n${"-".repeat(maxLength + 2)}\n  ${result}`;
-      steps.push(finalDisplay);
-    } else {
-      let finalDisplay = `  ${paddedBinary1}\n+ ${paddedBinary2}\n${"-".repeat(maxLength + 2)}\n  ${result}`;
-      steps.push(finalDisplay);
-    }
-    
-    return { result, steps };
-  };
-  
+        const bit1 = parseInt(paddedBinary1[i], 10);
+        const bit2 = parseInt(paddedBinary2[i], 10);
+        const sum = bit1 + bit2 + carry;
 
-  const subtract = (binary1, binary2) => {    
-    if (!/^[01]+$/.test(binary1) || !/^[01]+$/.test(binary2)) {     
-      return { result: "Invalid binary input", steps: [] };   
-    }    
-    
-    const maxLength = Math.max(binary1.length, binary2.length);   
-    binary1 = binary1.padStart(maxLength, "0");   
-    binary2 = binary2.padStart(maxLength, "0");    
-    
-    let borrow = 0;   
-    let result = "";   
-    let steps = [];    
-    
-    for (let i = maxLength - 1; i >= 0; i--) {     
-      let bit1 = parseInt(binary1[i], 10);     
-      let bit2 = parseInt(binary2[i], 10);      
-      bit1 -= borrow;       
-      
-      if (bit1 < bit2) {       
-        bit1 += 2;        
-        borrow = 1;     
-      } else {       
-        borrow = 0;     
-      }      
-      
-      result = (bit1 - bit2) + result;    
-      let borrowPrint = borrow ? ` borrow ${borrow} ` : " "
-      steps.push(`Step ${maxLength - i}: ${binary1[i]} - ${binary2[i]} - ${borrow} = ${bit1 - bit2} -> result: ${result}`);   
-    }    
-    
-    return { result, steps }; 
-  }
+        result = (sum % 2) + result;
+        carry = Math.floor(sum / 2);
+
+        if (carry > 0) {
+            carries[i + 1] = "1";
+        }
+    }
+
+    if (carry > 0) {
+        result = carry + result;
+        carries[0] = "1"; // Store the final carry
+    }
+
+    if (result.length > maxLength) {
+      result = result.slice(-maxLength);  
+    } else {
+        result = result.padStart(maxLength, "0"); 
+    }
+
+    const carriesLine = carries.join("");
+    let finalDisplay = `${carriesLine}\n  ${paddedBinary1}\n+ ${paddedBinary2}\n${"-".repeat(maxLength + 2)}\n  ${result}`;
+    steps.push(finalDisplay);
+
+    // Extract the first and last carries correctly
+    let firstCarry = carries.find(c => c === "1") || "0";
+    let lastCarry = [...carries].reverse().find(c => c === "1") || "0";
+
+    let remainder = (parseInt(firstCarry, 10) ^ parseInt(lastCarry, 10)).toString();
+    console.log(remainder);
+
+    return { result, steps, remainder };
+};
 
   const handleOperation = () => {
     if (!binary1 || !binary2) {
       alert("Please enter both binary numbers");
       return;
     }
+  
+    if (!validLength(binary1) || !validLength(binary2)) {
+      alert("Binary numbers must be either 6 or 8 bits long.");
+      return;
+    }
 
     let response = {};
     if (operation === "addition") {
       response = add(binary1, binary2);
-    } else if (operation === "subtraction") {
-      response = subtract(binary1, binary2);
     }
-
+    setSteps([]);
+    console.log(steps);
     setSteps(response.steps);
     setResult(response.result);
+    setRemainder(response.remainder);
   };
 
   return (
@@ -249,25 +230,27 @@ export default function BinaryOperations() {
         </button>
 
         {result && (
-          <div className="result-container">
-            <div className="result-steps">
-              <h3>Calculation Steps:</h3>
-              {steps.map((step, index) => (
-                <pre key={index} style={{ 
-                  fontFamily: 'monospace', 
-                  whiteSpace: 'pre-wrap',
-                  margin: '8px 0'
-                }}>
-                  {step}
-                </pre>
-              ))}
-            </div>
-            <div className="result-output">
-              <h3>Result:</h3>
-              <div>{result}</div>
-            </div>
+        <div className="result-container">
+          <div className="result-steps">
+            <h3>Calculation Steps:</h3>
+            {steps.map((step, index) => (
+              <pre key={index} style={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', margin: '8px 0' }}>
+                {step}
+              </pre>
+            ))}
           </div>
-        )}
+          <div className="result-output">
+            <h3>Result:</h3>
+            <div>{result}</div>
+          </div>
+          {remainder !== null && (
+            <div className="result-output">
+              <h3>Remainder:</h3>
+              <div>{remainder}</div>
+            </div>
+          )}
+        </div>
+      )}
       </div>
     </>
   );

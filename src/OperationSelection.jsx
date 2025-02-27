@@ -9,11 +9,6 @@ export default function OperationSelection() {
       name: 'Addition',
       description: 'Add two binary numbers',
       path: '/calculate/addition'
-    },
-    {
-      name: 'Subtraction',
-      description: 'Subtract one binary number from another',
-      path: '/calculate/subtraction'
     }
   ];
 
